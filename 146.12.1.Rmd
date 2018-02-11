@@ -1,0 +1,80 @@
+---
+title: "146.12.1"
+output: html_notebook
+---
+In this session we consider the following Gaussian mixture model.
+● 70% of the data come from a normal distribution with mean 0 and standard deviation 4.
+We call this the background distribution since we know the mean and standard deviation.
+```{r}
+background <- rnorm(7,0,4)
+```
+● 30% of the data come from a normal distribution with unknown mean μ and standard
+deviation σ.
+```{r}
+#unknown <- rnorm(3,?,?)
+```
+● This means the likelihood function given the data set, {xi} , is a weighted sum (a
+mixture) of two normal distributions, with weights 0.7 and 0.3.
+```{r}
+N <- 10000
+
+components <- sample(1:2,prob=c(0.7,0.3),size=N,replace=TRUE)
+mus <- c(0,1)
+sds <- c(4,1)
+
+samples <- rnorm(n=N,mean=mus[components],sd=sds[components])
+hist(samples)
+plot(samples)
+```
+
+```{r}
+N <- 10000
+
+components <- sample(1:2,prob=c(0.7,0.3),size=N,replace=TRUE)
+mus <- c(0,3)
+sds <- c(4,3)
+
+samples <- rnorm(n=N,mean=mus[components],sd=sds[components])
+hist(samples)
+plot(samples)
+```
+● We are told that μ and σ are not too different from the background normal distribution,
+and we have the following priors over them: N(μ | 0, 5 ), Gamma(σ | 2, 1).
+
+```{r}
+mu_unknown <-  rnorm(N,0,5)
+hist(mu_unknown)
+sigma_unknown <- rgamma(N,2,1)
+hist(sigma_unknown)
+```
+Data:
+```{r}
+data <- c(-4.127935, 3.046302, -10.77442, 3.305034, -6.985155, 5.536106, 1.294746, 7.638998,
+-5.650118, -4.478067, -0.4551435, -3.969413, -0.4225518, -2.462094, 1.886675,
+3.095567, 4.310003, 0.8548273, 4.368213, -2.152332)
+plot(data)
+hist(data)
+```
+
+Looking at the plot of the data above, and knowing that about 70% of the data were
+generated from the background distribution (mean = 0, standard deviation = 4), what is
+your best guess for what μ and σ are? Which data were generated from the background
+normal distribution and which were generated from the unknown normal distribution?
+```{r}
+#Based on this histogram, it seems like mu is somewhere around 1,2 and it's really hard to 
+#say something about sigma, because the data are pretty small but perhaps somewhere between 2.5 to 4.5, because it seems less spread than 4 and therefore the unkonwn could be less than 4.
+```
+Write down the posterior distribution. You don’t have to solve or simplify it — just use
+Bayes’ rule.
+```{r}
+
+```
+Why is it difficult to compute the normalization constant of the posterior distribution?
+```{r}
+
+```
+Do your best to visualize the posterior distribution over μ and σ.
+```{r}
+
+```
+
