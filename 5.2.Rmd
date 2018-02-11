@@ -1,0 +1,146 @@
+---
+title: "146 5.2 Dirilecht"
+output: html_notebook
+---
+
+***Model the following social mobility data set using a multinomial likelihood with a Dirichlet prior. The data set contains the results of a survey on male workers, and specifically what type of work (farm work, unskilled laborer, skilled laborer, professional) a son does, depending the type of work his father does.***
+```{r}
+# clears workspace: 
+rm(list=ls()) 
+# load data:
+data <- read.csv("/Users/oba2311/Desktop/Minerva/Junior/CS146/week 5/socialmobility.csv")
+head(data)
+```
+
+***Set up your Dirichlet prior so that you have a uniform distribution over the probability vector parameter of the multinomial. Write R code to compute the posterior Dirichlet distribution, given your prior hyperparameters and the data.***
+Load & configure RStan:
+```{r}
+library(rstan)
+rstan_options(auto_write = TRUE)
+options(mc.cores = parallel::detectCores())
+```
+
+```{r}
+
+# We have to tell Stan what data to expect, what our parameters are and what
+# the likelihood and prior are. Since the posterior is just proportional to
+# the product of the likelihood and the prior, we don't distinguish between
+# them explicitly in the model below. Every distribution we specify is
+# automatically incorporated into the product.
+
+#dataprep:
+
+stan_model <- "
+
+data {
+  int<lower=1> patients;  // total number of patients in the studies.
+  int<lower=0> improved;  // number of improved patients.
+  
+}
+
+parameters {
+  real<lower=1> alpha;    // prior parameters, alpha is 1 to get a uniform distribution.
+  real<lower=0,upper=1> theta;  // probability of workig in fathre's proffession.
+}
+
+model {
+  theta ~ dirichlet_lpdf(theta,alpha);        // prior over theta
+  improved ~ multinomial(theta);  // likelihood function
+}
+
+"
+
+# Fit the model to the data. This will generate samples over all parameters of our
+# model. This will take a little while to run. Stan will feel slow even on simple models.
+
+# NOTE: The cores=1 line is necessary to make stan work on CoCalc. Please remember
+# to add it whenever you call the stan() function — the call will fail if you don't.
+
+# NOTE: If you see a weird error message that looks like this, you can safely ignore it:
+#
+# #  define BOOST_NO_CXX11_RVALUE_REFERENCES
+#  ^
+# <command-line>:0:0: note: this is the location of the previous definition
+
+
+fit <- stan(
+    model_code = stan_model,
+    data = data,
+    cores = 2,
+    save_warmup = FALSE
+)
+```
+
+
+```{r}
+# The commands below are useful for a quick overview:
+print(samples)  # a rough summary
+print(summary(samples))  # more detailed summary
+plot(samples)   # a visual representation
+
+```
+
+
+
+Michael's code:
+```{r}
+library(gtools)
+socialmobility <- read.csv("socialmobility.csv")
+alphas = c(1, 1, 1, 1)
+
+son_conditioned_on_father <- function (kind, alphas=c(1, 1, 1, 1)) {
+  return(socialmobility[socialmobility$father == kind, 3] + alphas)
+}
+
+father_conditioned_on_son <- function (kind, alphas=c(1, 1, 1, 1)) {
+  return(socialmobility[socialmobility$son == kind, 3] + alphas)
+}
+
+num_samples <- 10000000
+quantile(rdirichlet(5, son_conditioned_on_father('unskilled'))[,3],
+         probs=c(.025, .975))
+
+quantile(rdirichlet(5, father_conditioned_on_son('professional'))[,1],
+         probs=c(.025, .975))
+
+```
+Jones Code:
+```{r}
+library(gtools)
+
+data = read.csv("socialmobility.csv")
+
+# defining prior alphas
+
+alphas = rep(1, each=16)
+
+# getting posterior alpha function
+
+Multino_Dirich_posterior <- function(prior_alpha_vector, data_vector){
+  for (i in 1:length(prior_alpha_vector)) {
+    prior_alpha_vector[i] = prior_alpha_vector[i] + data_vector[i]
+  }
+  return(prior_alpha_vector)
+}
+
+# data as numeric
+
+data_vector <- as.numeric(data$count)
+
+# getting prior alphas
+
+new_alphas <- Multino_Dirich_posterior(alphas,data_vector)
+
+# generating data
+
+x <- rdirichlet(1000, new_alphas )
+
+# unskilled father -> skilled son
+quantile(x[,7],  probs = c(0.025, 0.975))
+
+# proffesional son -> farm father
+quantile(x[,4],  probs = c(0.025, 0.975))
+
+```
+
+
